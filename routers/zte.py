@@ -44,18 +44,47 @@ class Zte(Router):
                 '_sessionTOKEN': sess_token,
             }
         )
+        # TODO handle force user log in
+        self._handle_zte_response(result)
         auth_cookie = (result.headers.get('Set-Cookie', '')).split('=')[1].split(';')[0]
         return session
+
+    def _handle_zte_response(self, response):
+        response.raise_for_status()
+
+        # json - when unable to login because higher permission user is logged in from another device
+        # raise error
+        try:
+            json = response.json()
+            if 'loginErrMsg' in json:
+                raise RuntimeError(json['loginErrMsg'])
+        except ValueError:
+            pass
+
+        # xml - anything not xml/html, eg. first ajax request
+        # continue
+        try:
+            xml = ElementTree.fromstring(response.content)
+        except ElementTree.ParseError:
+            return
+
+        # xml - if an ajax request has an error
+        # raise error
+        if xml.tag == 'ajax_response_xml_root':
+            error = xml.find('.IF_ERRORSTR')
+            if error.text != 'SUCC':
+                raise RuntimeError('ZTE router request error')
+        return
 
     def _get_active_hosts(self) -> List:
         hosts = []
         session = self._login()
-        first = session.get(f'http://{self.host}:{self.port}/?_type=menuView&_tag=lanMgrIpv4&Menu3Location=0&_={self.time}')    
-        if not first.ok:
-            print('TODO error')
+
+        first = session.get(f'http://{self.host}:{self.port}/?_type=menuView&_tag=lanMgrIpv4&Menu3Location=0&_={self.time}')
+        self._handle_zte_response(first)
+
         dhcp_addresses = session.get(f'http://{self.host}:{self.port}/?_type=menuData&_tag=dhcp4s_dhcphostinfo_m.lua&_={self.time}')                     
-        if not dhcp_addresses.ok:
-            print('TODO error')
+        self._handle_zte_response(dhcp_addresses)
         
         dhcp_xml = ElementTree.fromstring(dhcp_addresses.content)
         mac_ip_name = []
@@ -85,11 +114,10 @@ class Zte(Router):
             mac_ip_name.append({'name': name, 'mac': mac_address, 'ip': ip_address})
 
         first = session.get(f'http://{self.host}:{self.port}/?_type=menuView&_tag=arpTable&Menu3Location=0&_={self.time}')
-        if not first.ok:
-            print('TODO error')
+        self._handle_zte_response(first)
+
         arp_table = session.get(f'http://{self.host}:{self.port}/?_type=menuData&_tag=arp_arptable_lua.lua&_={self.time}')
-        if not arp_table.ok:
-            print('TODO error')
+        self._handle_zte_response(arp_table)
 
         arp_xml = ElementTree.fromstring(arp_table.content)
         ip_status = []

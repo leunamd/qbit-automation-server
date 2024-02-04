@@ -78,30 +78,33 @@ def get_speed_toggle_setting():
 
 def check_devices(router: Router, interval):
     while True:
-        new_mac_found = False
-        speed_toggle = get_speed_toggle_setting()
-        mac_dict = {}
-        if speed_toggle == '2' or speed_toggle == '3':
-            hosts = router.get_active_hosts()
-            for host in hosts:
-                if not host['mac']:
-                    continue
-                mac = host['mac']
-                name = host['name']
-                if mac not in MAC_ADDRESS_WHITELIST:
-                    new_mac_found = True
-                    mac_dict[mac] = name 
-            
-            is_limited = is_speed_limit_enabled()
-            if new_mac_found:
-                if is_limited == False:
-                    toggle_speed(is_limited)
-                    for mac, name in mac_dict.items():
-                        print(f'new host found {name} with MAC {mac}')
-            else:
-                if speed_toggle == '3':
-                    if is_limited == True:
+        try:
+            new_mac_found = False
+            speed_toggle = get_speed_toggle_setting()
+            mac_dict = {}
+            if speed_toggle == '2' or speed_toggle == '3':
+                hosts = router.get_active_hosts()
+                for host in hosts:
+                    if not host['mac']:
+                        continue
+                    mac = host['mac']
+                    name = host['name']
+                    if mac not in MAC_ADDRESS_WHITELIST:
+                        new_mac_found = True
+                        mac_dict[mac] = name
+                is_limited = is_speed_limit_enabled()
+                if new_mac_found:
+                    if is_limited == False:
                         toggle_speed(is_limited)
+                        for mac, name in mac_dict.items():
+                            print(f'new host found {name} with MAC {mac}')
+                else:
+                    if speed_toggle == '3':
+                        if is_limited == True:
+                            toggle_speed(is_limited)
+        except Exception as error:
+            print("An exception has occured:", error)
+            send_notification(f"An exception has occured: {error}")
         time.sleep(interval)
  
 def init_router(type, host, port, user, password) -> Router:
