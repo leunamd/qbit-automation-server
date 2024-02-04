@@ -116,10 +116,10 @@ class Zte(Router):
 
         online_filter = (x for x in ip_status if x['status'] == True) 
         for online in online_filter:
-            test = (x for x in mac_ip_name if x['ip'] == online['ip'])
-            for filtered in test:
+            join_ip = (x for x in mac_ip_name if x['ip'] == online['ip'])
+            for filtered in join_ip:
                 real = filtered
-            hosts.append({'mac': real['mac'].upper(), 'name': real['name'] })
+            hosts.append({'mac': real['mac'].upper(), 'name': real['name'], 'ip': online['ip'] })
         return hosts
 
     def get_active_hosts(self) -> List[Host]:
