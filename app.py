@@ -1,18 +1,23 @@
 import time
-import datetime
-import itertools
-
-from fritzconnection.lib.fritzhosts import FritzHosts
-from fritzconnection.core.exceptions import FritzServiceError
-
 import os
 import requests
+import sys
 from dotenv import load_dotenv
+
+from routers.zte import Zte
+from routers.fritz import Fritz
+from common.router import Router
+
 load_dotenv()
 
-ADDRESS = os.getenv('FRITZ_URL','192.168.178.1')
-USER = os.getenv('FRITZ_USER')
-PASSWORD = os.getenv('FRITZ_PASSWORD')
+ROUTER_TYPE = os.getenv('ROUTER_TYPE')
+if not ROUTER_TYPE:
+    sys.exit('Please specify router type in env variables')
+
+ROUTER_HOST = os.getenv('ROUTER_URL','192.168.0.1')
+ROUTER_PORT = os.getenv('ROUTER_PORT','80')
+ROUTER_USER = os.getenv('ROUTER_USER')
+ROUTER_PASSWORD = os.getenv('ROUTER_PASSWORD')
 MAC_ADDRESS_WHITELIST = [mac_address for mac_address in os.getenv('MAC_ADDRESS_WHITELIST').split(',')]
 
 TRACKING_INTERVAL = 60 # 60 seconds
@@ -71,14 +76,13 @@ def get_speed_toggle_setting():
         send_notification("Unable to get webpage radio button value")
         return '1'
 
-def check_devices(interval):
-    fh = FritzHosts(address=ADDRESS, user=USER, password=PASSWORD)
+def check_devices(router: Router, interval):
     while True:
         new_mac_found = False
         speed_toggle = get_speed_toggle_setting()
         mac_dict = {}
         if speed_toggle == '2' or speed_toggle == '3':
-            hosts = fh.get_active_hosts()
+            hosts = router.get_active_hosts()
             for host in hosts:
                 if not host['mac']:
                     continue
@@ -100,9 +104,18 @@ def check_devices(interval):
                         toggle_speed(is_limited)
         time.sleep(interval)
  
+def init_router(type, host, port, user, password) -> Router:
+    match type.lower():
+        case 'zte':
+            return Zte(host=host, port=port, user=user, password=password)
+        case 'fritz':
+            return Fritz(host=host, port=port, user=user, password=password)
+        case _:
+            sys.exit(f'Unable to interpret router type {type}')
 
 def main():
-    check_devices(TRACKING_INTERVAL)
+    router = init_router(ROUTER_TYPE, ROUTER_HOST, ROUTER_PORT, ROUTER_USER, ROUTER_PASSWORD)
+    check_devices(router, TRACKING_INTERVAL)
 
 
 if __name__ == '__main__':
