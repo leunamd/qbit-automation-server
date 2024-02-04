@@ -107,14 +107,14 @@ def check_devices(router: Router, interval):
             send_notification(f"An exception has occured: {error}")
         time.sleep(interval)
  
-def init_router(type, host, port, user, password) -> Router:
-    match type.lower():
+def init_router(router_type, host, port, user, password) -> Router:
+    match router_type.lower():
         case 'zte':
             return Zte(host=host, port=port, user=user, password=password)
         case 'fritz':
             return Fritz(host=host, port=port, user=user, password=password)
         case _:
-            sys.exit(f'Unable to interpret router type {type}')
+            sys.exit(f'Unable to interpret router type {router_type}')
 
 def main():
     router = init_router(ROUTER_TYPE, ROUTER_HOST, ROUTER_PORT, ROUTER_USER, ROUTER_PASSWORD)
