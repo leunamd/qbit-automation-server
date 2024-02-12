@@ -18,6 +18,7 @@ ROUTER_HOST = os.getenv('ROUTER_URL','192.168.0.1')
 ROUTER_PORT = os.getenv('ROUTER_PORT','80')
 ROUTER_USER = os.getenv('ROUTER_USER')
 ROUTER_PASSWORD = os.getenv('ROUTER_PASSWORD')
+STARTUP_DELAY = int(os.getenv('STARTUP_DELAY','0'))
 MAC_ADDRESS_WHITELIST = [mac_address for mac_address in str(os.getenv('MAC_ADDRESS_WHITELIST')).split(',')]
 
 TRACKING_INTERVAL = 60 # 60 seconds
@@ -117,6 +118,7 @@ def init_router(router_type, host, port, user, password) -> Router:
         sys.exit(f'Unable to interpret router type {router_type}')
 
 def main():
+    time.sleep(STARTUP_DELAY)
     router = init_router(ROUTER_TYPE, ROUTER_HOST, ROUTER_PORT, ROUTER_USER, ROUTER_PASSWORD)
     check_devices(router, TRACKING_INTERVAL)
 
