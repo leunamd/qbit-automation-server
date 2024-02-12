@@ -18,7 +18,7 @@ ROUTER_HOST = os.getenv('ROUTER_URL','192.168.0.1')
 ROUTER_PORT = os.getenv('ROUTER_PORT','80')
 ROUTER_USER = os.getenv('ROUTER_USER')
 ROUTER_PASSWORD = os.getenv('ROUTER_PASSWORD')
-MAC_ADDRESS_WHITELIST = [mac_address for mac_address in os.getenv('MAC_ADDRESS_WHITELIST').split(',')]
+MAC_ADDRESS_WHITELIST = [mac_address for mac_address in str(os.getenv('MAC_ADDRESS_WHITELIST')).split(',')]
 
 TRACKING_INTERVAL = 60 # 60 seconds
 QBIT_AUTOMATION_WEBPAGE_ENDPOINT = os.getenv('QBIT_AUTOMATION_WEBPAGE_ENDPOINT')
